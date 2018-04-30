@@ -1,6 +1,6 @@
 Android
 PlayerPath?
-C:/Users/shebkoch/Documents/Labyrint/1.apk
+C:/Users/shebkoch/Documents/Labyrint/l2.apk
 SceneListBegin?
 Assets/1.unity
 SceneListEnd?
