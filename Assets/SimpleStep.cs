@@ -9,6 +9,56 @@ public class SimpleStep : MonoBehaviour {
 	{
 		left,right,down,up
 	};
+	[System.Serializable]
+	public class Tips
+	{
+		[SerializeField]
+		public List<GameObject> tips = new List<GameObject>();
+		public void Add(GameObject gameObject) {
+			tips.Add(gameObject);
+		}
+		public GameObject this[int key]
+		{
+			get {
+				return tips[key];
+			}
+			set {
+				tips[key] = value;
+			}
+		}
+		public int Count
+		{
+			get {
+				return tips.Count;
+			}
+		}
+	}
+	[System.Serializable]
+	public class TipsType {
+		[SerializeField]
+		public List<Tips> tipsType = new List<Tips>();
+		public Tips this[int key]
+		{
+			get {
+				return tipsType[key];
+			}
+			set {
+				tipsType[key] = value;
+			}
+		}
+		public int Count {
+			get {
+				return tipsType.Count;
+			}
+		}
+		public void DeActivateAll() {
+			foreach (var tipType in tipsType) {
+				foreach (var tip in tipType.tips) {
+					tip.SetActive(false);
+				}
+			}
+		}
+	}
 	public List<GameObject> arrows;
 	public GameObject map;
 	public float speed;
@@ -22,8 +72,8 @@ public class SimpleStep : MonoBehaviour {
 	public GameObject gg;
 	public GameObject trap;
 	public GameObject endPanel;
-	public List<Vector3> tipsPos;
-	public List<GameObject> tips;
+	public List<GameObject> tipsPos;
+	public TipsType tips;
 	public void Start () {
 		speed /= 100;
 		foreach (var border in borders) {
@@ -44,19 +94,21 @@ public class SimpleStep : MonoBehaviour {
 			curDir = Dir.right;
 		}
 	}
+	float xSpeedRatio = 1.2f;
 	public void Down(){
 		if(direction == Vector3.zero) {
-			direction = Vector3.down;
+			direction = Vector3.down * xSpeedRatio;
 			curDir = Dir.down;
 		}
 	}
 	public void Up() {
 		if (direction == Vector3.zero) {
-			direction = Vector3.up;
+			direction = Vector3.up * xSpeedRatio;
 			curDir = Dir.up;
 		}
 	}
 	public void Restart() {
+		Analytic.Instance.SendData();
 		SceneManager.LoadScene(0);
 	}
 	public void EndGame() {
@@ -94,13 +146,17 @@ public class SimpleStep : MonoBehaviour {
 		return pos;
 	}
 	void StopMove() {
+		Analytic.Instance.levelTotal++;
 		foreach (var arrow in arrows) {
 			arrow.SetActive(true);
 		}
+		int type = Random.Range(0, tips.Count);
+		List<GameObject> buff = new List<GameObject>(tips[type].tips); 
 		for (int i = 0; i < tipsPos.Count; i++) {
-			int elem = Random.Range(0,tips.Count);
-			tips[elem].SetActive(true);
-			tips[elem].transform.position = tipsPos[i];
+			int elem = Random.Range(0, buff.Count);
+			buff[elem].SetActive(true);
+			buff[elem].transform.position = tipsPos[i].transform.position;
+			buff.RemoveAt(elem);
 		}
 		trapFree = (Dir)Random.Range(0,3);
 		switch (curDir) {
@@ -127,7 +183,7 @@ public class SimpleStep : MonoBehaviour {
 		IsMove = false;	
 	}
 	void Update () {
-		scoreText.text = "Score:" + score.ToString();
+		scoreText.text = "Score:" + score*100;
 		if (direction != Vector3.zero) {
 			var pos = map.GetComponent<RectTransform>().position;			
 			pos += direction * speed * -1;
@@ -136,11 +192,15 @@ public class SimpleStep : MonoBehaviour {
 			foreach (var arrow in arrows) {
 				arrow.SetActive(false);
 			}
-
-			foreach (var item in tips) {
-				item.SetActive(false);
+			foreach (var item in tips.tipsType) {
+				foreach (var ite1m in item.tips) {
+					ite1m.transform.position = Vector3.zero;
+				}
+			} 
+			tips.DeActivateAll();
+			if (IsMove && Vector2.Distance(pos, Vector2.zero) <= speed) {
+				StopMove();
 			}
-			if (IsMove && Vector2.Distance(pos, Vector2.zero) <= speed) StopMove();
 		}
 	}
 }
